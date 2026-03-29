@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apollo Engagement Audit Tool - PHX6</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F3FF;color:#1e1e2e;min-height:100vh}
+.app-header{background:linear-gradient(135deg,#4C1D95 0%,#6D28D9 100%);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #7C3AED;position:sticky;top:0;z-index:100}
+.app-title{display:flex;align-items:center;gap:12px}
+.app-title h1{font-size:20px;font-weight:700;color:#fff}
+.app-title .badge{background:#fff;color:#4C1D95;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700}
+.header-info{font-size:12px;color:#DDD6FE}
+.tab-bar{display:flex;background:#fff;border-bottom:2px solid #E9E5F5}
+.tab-btn{flex:1;padding:14px 20px;background:transparent;border:none;color:#6B7280;font-size:14px;font-weight:600;cursor:pointer;transition:all .3s;border-bottom:3px solid transparent;display:flex;align-items:center;justify-content:center;gap:8px}
+.tab-btn:hover{background:#F5F3FF;color:#6D28D9}
+.tab-btn.active{color:#6D28D9;border-bottom-color:#6D28D9;background:#F5F3FF}
+.tab-content{display:none;padding:20px;max-width:1400px;margin:0 auto}
+.tab-content.active{display:block}
+.section{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;border:1px solid #E9E5F5;box-shadow:0 1px 4px rgba(109,40,217,0.06)}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:16px;font-weight:700;color:#4C1D95;display:flex;align-items:center;gap:8px}
+.links-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.link-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:all .2s;border:1px solid}
+.link-btn.qs{background:#F5F3FF;color:#6D28D9;border-color:#6D28D9}
+.link-btn.qs:hover{background:#6D28D9;color:#fff}
+.link-btn.apollo{background:#F5F3FF;color:#7C3AED;border-color:#7C3AED}
+.link-btn.apollo:hover{background:#7C3AED;color:#fff}
+.drop-zones{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:900px){.drop-zones{grid-template-columns:1fr}}
+.drop-zone{border:2px dashed #C4B5FD;border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:all .3s;background:#FAFAFE;position:relative}
+.drop-zone:hover,.drop-zone.dragover{border-color:#7C3AED;background:#F5F3FF}
+.drop-zone.loaded{border-color:#16A34A;border-style:solid;background:#F0FDF4}
+.drop-zone .dz-icon{font-size:28px;margin-bottom:10px;color:#7C3AED;font-weight:700}
+.drop-zone .dz-title{font-size:14px;font-weight:700;color:#1e1e2e;margin-bottom:4px}
+.drop-zone .dz-sub{font-size:12px;color:#6B7280}
+.drop-zone .dz-status{margin-top:10px;font-size:13px;font-weight:600}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.queue-container{max-height:600px;overflow-y:auto}
+.queue-empty{text-align:center;padding:40px;color:#9CA3AF}
+.queue-empty .big-icon{font-size:32px;margin-bottom:12px;color:#C4B5FD;font-weight:700}
+.assoc-card{background:#FAFAFE;border:1px solid #E9E5F5;border-radius:10px;margin-bottom:12px;overflow:hidden;transition:all .2s}
+.assoc-card:hover{border-color:#C4B5FD}
+.assoc-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none}
+.assoc-info{display:flex;align-items:center;gap:12px}
+.assoc-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.rank-1{background:#DC2626}.rank-2{background:#EA580C}.rank-3{background:#D97706}.rank-other{background:#9CA3AF}
+.assoc-login{font-weight:700;color:#1e1e2e;font-size:14px}
+.assoc-mgr{font-size:11px;color:#6B7280}
+.assoc-stats{display:flex;gap:16px;align-items:center}
+.stat{text-align:center}
+.stat-val{font-size:16px;font-weight:700}
+.stat-label{font-size:10px;color:#6B7280;text-transform:uppercase}
+.pct-low{color:#DC2626}.pct-med{color:#D97706}.pct-high{color:#16A34A}
+.assoc-expand{font-size:18px;color:#9CA3AF;transition:transform .3s}
+.assoc-expand.open{transform:rotate(180deg)}
+.assoc-body{display:none;padding:0 16px 16px;border-top:1px solid #E9E5F5}
+.assoc-body.open{display:block}
+.lpn-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
+.lpn-table th{background:#F5F3FF;color:#4C1D95;padding:8px 10px;text-align:left;font-weight:600;text-transform:uppercase;font-size:11px;position:sticky;top:0}
+.lpn-table td{padding:8px 10px;border-bottom:1px solid #F3F0FF;color:#374151}
+.lpn-table tr:hover td{background:#F5F3FF}
+.lpn-check{width:18px;height:18px;accent-color:#7C3AED;cursor:pointer}
+.engage-btn{background:#7C3AED;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:700;font-size:12px;cursor:pointer;margin-top:10px;transition:all .2s}
+.engage-btn:hover{background:#6D28D9;transform:translateY(-1px)}
+.form-section{background:#FAFAFE;border:1px solid #E9E5F5;border-radius:10px;padding:20px;margin-top:16px}
+.form-title{font-size:15px;font-weight:700;color:#4C1D95;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:12px;font-weight:600;color:#6B7280}
+.form-input,.form-select,.form-textarea{background:#fff;border:1px solid #D1D5DB;border-radius:6px;padding:10px 12px;color:#1e1e2e;font-size:13px;font-family:inherit;transition:border-color .2s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:#7C3AED;box-shadow:0 0 0 3px rgba(124,58,237,0.1)}
+.form-textarea{min-height:80px;resize:vertical}
+.radio-group{display:flex;gap:16px;padding:6px 0}
+.radio-label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#374151}
+.radio-label input{accent-color:#7C3AED}
+.lpn-note-group{background:#F5F3FF;border:1px solid #E9E5F5;border-radius:8px;padding:12px;margin-top:8px}
+.lpn-note-header{font-size:12px;font-weight:700;color:#6D28D9;margin-bottom:6px}
+.lpn-note-item{font-size:11px;color:#6B7280;margin-bottom:4px}
+.output-box{background:#F9FAFB;border:1px solid #D1D5DB;border-radius:8px;padding:16px;margin-top:16px;font-size:13px;line-height:1.7;color:#374151;white-space:pre-wrap;position:relative;min-height:60px}
+.copy-btn{position:absolute;top:8px;right:8px;background:#7C3AED;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:#6D28D9}
+.copy-btn.copied{background:#16A34A}
+.gen-btn{background:linear-gradient(135deg,#7C3AED,#6D28D9);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px;margin-top:16px}
+.gen-btn:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(124,58,237,.3)}
+.clear-btn{background:#E9E5F5;color:#4C1D95;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;transition:all .2s}
+.clear-btn:hover{background:#DC2626;color:#fff}
+.counter-bar{display:flex;gap:20px;padding:12px 16px;background:#F5F3FF;border-radius:8px;margin-bottom:16px}
+.counter-item{display:flex;align-items:center;gap:6px;font-size:13px;color:#4C1D95}
+.counter-num{font-weight:700;font-size:18px;color:#7C3AED}
+.tip-box{background:#F5F3FF;border-left:3px solid #7C3AED;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:16px;font-size:12px;color:#4C1D95;line-height:1.6}
+.tip-box strong{color:#6D28D9}
+
+/* History Tab Styles */
+.history-controls{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.history-search{flex:1;min-width:200px}
+.history-filter{padding:10px 14px;background:#fff;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;color:#1e1e2e;cursor:pointer;font-family:inherit}
+.history-filter:focus{outline:none;border-color:#7C3AED}
+.history-card{background:#FAFAFE;border:1px solid #E9E5F5;border-radius:10px;padding:16px;margin-bottom:12px;transition:all .2s}
+.history-card:hover{border-color:#C4B5FD;box-shadow:0 2px 8px rgba(124,58,237,0.08)}
+.history-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.history-type-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase}
+.history-type-badge.power{background:#EDE9FE;color:#6D28D9}
+.history-type-badge.clean{background:#F3E8FF;color:#7C3AED}
+.history-meta{display:flex;gap:16px;font-size:12px;color:#6B7280;margin-bottom:10px;flex-wrap:wrap}
+.history-meta span{display:flex;align-items:center;gap:4px}
+.history-meta strong{color:#4C1D95}
+.history-note{background:#fff;border:1px solid #E9E5F5;border-radius:6px;padding:12px;font-size:12px;line-height:1.6;color:#374151;white-space:pre-wrap;max-height:120px;overflow:hidden;transition:max-height .3s;cursor:pointer}
+.history-note.expanded{max-height:none}
+.history-note-toggle{font-size:11px;color:#7C3AED;cursor:pointer;margin-top:6px;font-weight:600}
+.history-actions{display:flex;gap:8px;margin-top:10px}
+.history-btn{padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid;transition:all .2s}
+.history-btn.copy{background:#F5F3FF;color:#7C3AED;border-color:#7C3AED}
+.history-btn.copy:hover{background:#7C3AED;color:#fff}
+.history-btn.delete{background:#FEF2F2;color:#DC2626;border-color:#DC2626}
+.history-btn.delete:hover{background:#DC2626;color:#fff}
+.history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.history-stat-card{background:#fff;border:1px solid #E9E5F5;border-radius:10px;padding:16px;text-align:center}
+.history-stat-val{font-size:28px;font-weight:700;color:#7C3AED}
+.history-stat-label{font-size:11px;color:#6B7280;text-transform:uppercase;margin-top:4px}
+.export-history-btn{background:#4C1D95;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s}
+.export-history-btn:hover{background:#6D28D9}
+
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:#F5F3FF}
+::-webkit-scrollbar-thumb{background:#C4B5FD;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#A78BFA}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+<div class="app-title">
+<h1>Apollo Engagement Audit Tool</h1>
+<span class="badge">PHX6</span>
+</div>
+<div class="header-info">5 Power + 5 Cleaning per shift | 4 days/week</div>
+</div>
+
+<div class="tab-bar">
+<button class="tab-btn active" onclick="switchTab('power')" id="tab-power">Power Testing</button>
+<button class="tab-btn" onclick="switchTab('clean')" id="tab-clean">Cleaning</button>
+<button class="tab-btn" onclick="switchTab('history')" id="tab-history">History</button>
+</div>
+
+<!-- ==================== POWER TESTING TAB ==================== -->
+<div class="tab-content active" id="content-power">
+<div class="links-bar">
+<a href="https://us-east-1.quicksight.aws.amazon.com/sn/account/quetzal/dashboards/0560e9bc-d466-490c-8fc1-af1576881b89/sheets/0560e9bc-d466-490c-8fc1-af1576881b89_d468adaa-e6ca-44e9-9fb7-7ec0a6fc2f2a" target="_blank" class="link-btn qs">QuickSight - Power Testing</a>
+<a href="https://apollo-audit.corp.amazon.com/audits/new?audit_type_id=23088" target="_blank" class="link-btn apollo">Apollo Audit - Power Test</a>
+</div>
+<div class="tip-box">
+<strong>Workflow:</strong> 1) Click QuickSight link -- 2) Download "Top Opportunities" CSV, drop in left box -- 3) Download "Line Item Drill Down" CSV, drop in right box -- 4) Select associates -- 5) Fill form -- 6) Generate note -- 7) Copy to Apollo
+</div>
+<div class="section">
+<div class="section-header">
+<div class="section-title">Drop CSV Files</div>
+<button class="clear-btn" onclick="clearData('power')">Clear All Data</button>
+</div>
+<div class="drop-zones">
+<div class="drop-zone" id="pwr-dz1" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event,'power','top')">
+<input type="file" accept=".csv" onchange="fileSelect(event,'power','top')">
+<div class="dz-icon">[CSV 1]</div>
+<div class="dz-title">Top Opportunities - Unable to Test</div>
+<div class="dz-sub">Drag and drop CSV or click to browse</div>
+<div class="dz-status" id="pwr-dz1-status"></div>
+</div>
+<div class="drop-zone" id="pwr-dz2" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event,'power','line')">
+<input type="file" accept=".csv" onchange="fileSelect(event,'power','line')">
+<div class="dz-icon">[CSV 2]</div>
+<div class="dz-title">Line Item Drill Down - Unable to Test</div>
+<div class="dz-sub">Drag and drop CSV or click to browse</div>
+<div class="dz-status" id="pwr-dz2-status"></div>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="section-header">
+<div class="section-title">Engagement Queue</div>
+</div>
+<div class="counter-bar" id="pwr-counters">
+<div class="counter-item">Associates: <span class="counter-num" id="pwr-cnt-assoc">0</span></div>
+<div class="counter-item">LPNs Matched: <span class="counter-num" id="pwr-cnt-lpn">0</span></div>
+</div>
+<div class="queue-container" id="pwr-queue">
+<div class="queue-empty"><div class="big-icon">--</div><div>Drop CSV files above to populate the engagement queue</div></div>
+</div>
+</div>
+<div class="section">
+<div class="section-header"><div class="section-title">Generate Engagement Note</div></div>
+<div class="form-section" id="pwr-form">
+<div class="form-title">Power Testing Engagement Details</div>
+<div class="form-grid">
+<div class="form-group"><label class="form-label">Associate Login</label><input class="form-input" id="pwr-login" placeholder="e.g. beyoyrob"></div>
+<div class="form-group"><label class="form-label">Power Testing %</label><input class="form-input" id="pwr-pct" placeholder="e.g. 55.1" type="number" step="0.01"></div>
+<div class="form-group"><label class="form-label">Units Asked to Test</label><input class="form-input" id="pwr-units" placeholder="e.g. 49" type="number"></div>
+<div class="form-group"><label class="form-label">COGS Not Tested ($)</label><input class="form-input" id="pwr-cogs" placeholder="e.g. 1503.34" type="number" step="0.01"></div>
+<div class="form-group"><label class="form-label">All supplies present?</label><div class="radio-group"><label class="radio-label"><input type="radio" name="pwr-supplies" value="yes" checked> Yes</label><label class="radio-label"><input type="radio" name="pwr-supplies" value="no"> No</label></div></div>
+<div class="form-group"><label class="form-label">If NO - Missing supplies</label><input class="form-input" id="pwr-missing" placeholder="e.g. precision screw driver set, AA batteries"></div>
+<div class="form-group"><label class="form-label">Properly trained?</label><div class="radio-group"><label class="radio-label"><input type="radio" name="pwr-trained" value="yes" checked> Yes</label><label class="radio-label"><input type="radio" name="pwr-trained" value="no"> No</label></div></div>
+<div class="form-group"><label class="form-label">Any barriers?</label><div class="radio-group"><label class="radio-label"><input type="radio" name="pwr-barriers" value="no" checked> No</label><label class="radio-label"><input type="radio" name="pwr-barriers" value="yes"> Yes</label></div></div>
+<div class="form-group full"><label class="form-label">Barrier details (if yes)</label><input class="form-input" id="pwr-barrier-detail" placeholder="e.g. sometimes missing supplies when they go to station"></div>
+</div>
+<div id="pwr-lpn-notes"></div>
+<button class="gen-btn" onclick="generateNote('power')">Generate Engagement Note</button>
+<div class="output-box" id="pwr-output" style="display:none">
+<button class="copy-btn" onclick="copyNote('power')">Copy</button>
+<div id="pwr-output-text"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ==================== CLEANING TAB ==================== -->
+<div class="tab-content" id="content-clean">
+<div class="links-bar">
+<a href="https://us-east-1.quicksight.aws.amazon.com/sn/account/quetzal/dashboards/ca6a68c5-8e72-4dbb-a1f6-ec7eda7a39f3" target="_blank" class="link-btn qs">QuickSight - Cleaning (AA Deep Dive)</a>
+<a href="https://apollo-audit.corp.amazon.com/audits/new?audit_type_id=19802" target="_blank" class="link-btn apollo">Apollo Audit - Cleaning</a>
+</div>
+<div class="tip-box">
+<strong>Workflow:</strong> 1) Click QuickSight link, go to AA Deep Dive tab -- 2) Download "Top Opportunities" CSV, drop in left box -- 3) Download "Line Item Drill Down" CSV, drop in right box -- 4) Select associates -- 5) Fill form -- 6) Generate note -- 7) Copy to Apollo
+</div>
+<div class="section">
+<div class="section-header">
+<div class="section-title">Drop CSV Files</div>
+<button class="clear-btn" onclick="clearData('clean')">Clear All Data</button>
+</div>
+<div class="drop-zones">
+<div class="drop-zone" id="cln-dz1" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event,'clean','top')">
+<input type="file" accept=".csv" onchange="fileSelect(event,'clean','top')">
+<div class="dz-icon">[CSV 1]</div>
+<div class="dz-title">Top Opportunities - Unable to Clean</div>
+<div class="dz-sub">Drag and drop CSV or click to browse</div>
+<div class="dz-status" id="cln-dz1-status"></div>
+</div>
+<div class="drop-zone" id="cln-dz2" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event,'clean','line')">
+<input type="file" accept=".csv" onchange="fileSelect(event,'clean','line')">
+<div class="dz-icon">[CSV 2]</div>
+<div class="dz-title">Line Item Drill Down - Unable to Clean</div>
+<div class="dz-sub">Drag and drop CSV or click to browse</div>
+<div class="dz-status" id="cln-dz2-status"></div>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="section-header"><div class="section-title">Engagement Queue</div></div>
+<div class="counter-bar" id="cln-counters">
+<div class="counter-item">Associates: <span class="counter-num" id="cln-cnt-assoc">0</span></div>
+<div class="counter-item">LPNs Matched: <span class="counter-num" id="cln-cnt-lpn">0</span></div>
+</div>
+<div class="queue-container" id="cln-queue">
+<div class="queue-empty"><div class="big-icon">--</div><div>Drop CSV files above to populate the engagement queue</div></div>
+</div>
+</div>
+<div class="section">
+<div class="section-header"><div class="section-title">Generate Engagement Note</div></div>
+<div class="form-section" id="cln-form">
+<div class="form-title">Cleaning Engagement Details</div>
+<div class="form-grid">
+<div class="form-group"><label class="form-label">Associate Login</label><input class="form-input" id="cln-login" placeholder="e.g. abrarivx"></div>
+<div class="form-group"><label class="form-label">Cleaning %</label><input class="form-input" id="cln-pct" placeholder="e.g. 10" type="number" step="0.01"></div>
+<div class="form-group"><label class="form-label">All cleaning supplies present?</label><div class="radio-group"><label class="radio-label"><input type="radio" name="cln-supplies" value="yes" checked> Yes</label><label class="radio-label"><input type="radio" name="cln-supplies" value="no"> No</label></div></div>
+<div class="form-group"><label class="form-label">If NO - Missing supplies</label><input class="form-input" id="cln-missing" placeholder="e.g. lint roller, cleaning spray"></div>
+<div class="form-group"><label class="form-label">Any barriers?</label><div class="radio-group"><label class="radio-label"><input type="radio" name="cln-barriers" value="no" checked> No</label><label class="radio-label"><input type="radio" name="cln-barriers" value="yes"> Yes</label></div></div>
+<div class="form-group"><label class="form-label">Enough time to clean?</label><div class="radio-group"><label class="radio-label"><input type="radio" name="cln-time" value="yes" checked> Yes</label><label class="radio-label"><input type="radio" name="cln-time" value="no"> No</label></div></div>
+<div class="form-group"><label class="form-label">Demonstration provided?</label><div class="radio-group"><label class="radio-label"><input type="radio" name="cln-demo" value="yes" checked> Yes</label><label class="radio-label"><input type="radio" name="cln-demo" value="no"> No</label></div></div>
+<div class="form-group"><label class="form-label">Barrier / time details (if any)</label><input class="form-input" id="cln-barrier-detail" placeholder="e.g. depends on item type, takes longer"></div>
+<div class="form-group full"><label class="form-label">Needs cleaning reminder?</label><div class="radio-group"><label class="radio-label"><input type="radio" name="cln-remind" value="no" checked> No</label><label class="radio-label"><input type="radio" name="cln-remind" value="yes"> Yes - Remind to click dirty/stains</label></div></div>
+</div>
+<div id="cln-lpn-notes"></div>
+<button class="gen-btn" onclick="generateNote('clean')">Generate Engagement Note</button>
+<div class="output-box" id="cln-output" style="display:none">
+<button class="copy-btn" onclick="copyNote('clean')">Copy</button>
+<div id="cln-output-text"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ==================== HISTORY TAB ==================== -->
+<div class="tab-content" id="content-history">
+<div class="section">
+<div class="section-header">
+<div class="section-title">Engagement History</div>
+<div style="display:flex;gap:8px">
+<button class="export-history-btn" onclick="exportHistory()">Export History as CSV</button>
+<button class="clear-btn" onclick="clearHistory()">Clear All History</button>
+</div>
+</div>
+<div class="history-stats" id="history-stats"></div>
+<div class="history-controls">
+<input class="form-input history-search" id="history-search" placeholder="Search by associate login, date, or note content..." oninput="renderHistory()">
+<select class="history-filter" id="history-filter" onchange="renderHistory()">
+<option value="all">All Types</option>
+<option value="power">Power Testing Only</option>
+<option value="clean">Cleaning Only</option>
+</select>
+<select class="history-filter" id="history-sort" onchange="renderHistory()">
+<option value="newest">Newest First</option>
+<option value="oldest">Oldest First</option>
+<option value="login">By Login (A-Z)</option>
+</select>
+</div>
+<div id="history-list"></div>
+</div>
+</div>
+
+<details style="clear:both;display:block;margin:30px auto;max-width:900px;background:#FFF3CD;border-left:5px solid #FF9800;border-radius:8px;font-family:system-ui;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+<summary style="padding:20px;cursor:pointer;list-style:none;user-select:none;display:flex;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center"><strong style="font-size:16px;color:#2C3744">DATA SOURCES AND ASSUMPTIONS</strong></div>
+<span style="font-size:14px;color:#666;font-weight:normal">(Click to expand)</span>
+</summary>
+<div style="padding:0 20px 20px 20px;font-size:13px;color:#2C3744;line-height:1.6">
+<strong>Source:</strong> User-provided Apollo audit forms, QuickSight CSV exports, engagement note examples<br>
+<strong>Data Verification:</strong>
+<ul style="margin:8px 0;padding-left:20px">
+<li>All CSV column mappings derived from actual PHX6 QuickSight export samples provided</li>
+<li>Power Testing CSV columns: Warehouse Id, Manager Id, Associate Id, % Tested, Units Asked to Test, Avg. Processing Time, COGS Not Tested</li>
+<li>Cleaning CSV columns: Associate Id, Mode, % Cleaned, Units Asked to Clean, Avg. Processing Time, COGS Not Cleaned</li>
+<li>Line Item Drill Down columns: Manager Id, Associate Id, Activity End Time, Answer String, GL Name, Subcategory Desc, LPN, Asin, Item Fifo Cost</li>
+<li>Engagement note templates match user exact formatting from provided examples</li>
+<li>Apollo audit links and QuickSight links taken directly from user input</li>
+<li>History stored in browser localStorage - persists between sessions on same browser/device</li>
+</ul>
+</div>
+</details>
+
+<div id="viz-controls" style="position:fixed;top:15px;right:15px;z-index:9999;display:flex;gap:8px">
+<button id="export-html-btn" style="background:#7C3AED;border:2px solid #6D28D9;color:white;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:all 0.2s" title="Save Tool as HTML" onmouseover="this.style.background='#6D28D9';this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#7C3AED';this.style.transform='translateY(0)'">Save Tool</button>
+<button id="fs-btn" style="background:white;border:2px solid #7C3AED;color:#7C3AED;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:all 0.2s" title="Fullscreen" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Fullscreen</button>
+</div>
+
+<script>
+var state={power:{top:[],line:[],matched:[]},clean:{top:[],line:[],matched:[]}};
+var HISTORY_KEY='apollo_engagement_history';
+
+function getHistory(){try{return JSON.parse(localStorage.getItem(HISTORY_KEY))||[];}catch(e){return[];}}
+function saveHistory(h){localStorage.setItem(HISTORY_KEY,JSON.stringify(h));}
+
+function switchTab(tab){
+document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active')});
+document.getElementById('tab-'+tab).classList.add('active');
+document.getElementById('content-'+tab).classList.add('active');
+if(tab==='history')renderHistory();
+}
+
+function parseCSV(text){
+var lines=text.split('\n');if(lines.length<2)return[];
+var headers=parseCSVLine(lines[0]);var rows=[];
+for(var i=1;i<lines.length;i++){var line=lines[i].trim();if(!line)continue;
+var vals=parseCSVLine(line);var obj={};
+for(var j=0;j<headers.length;j++){obj[headers[j].trim()]=(vals[j]||'').trim();}
+rows.push(obj);}return rows;
+}
+function parseCSVLine(line){
+var result=[],current='',inQ=false;
+for(var i=0;i<line.length;i++){var ch=line[i];
+if(inQ){if(ch==='"'){if(i+1<line.length&&line[i+1]==='"'){current+='"';i++;}else{inQ=false;}}else{current+=ch;}}
+else{if(ch==='"'){inQ=true;}else if(ch===','){result.push(current);current='';}else{current+=ch;}}}
+result.push(current);return result;
+}
+
+function dzOver(e){e.preventDefault();e.currentTarget.classList.add('dragover');}
+function dzLeave(e){e.currentTarget.classList.remove('dragover');}
+function dzDrop(e,type,which){e.preventDefault();e.currentTarget.classList.remove('dragover');var file=e.dataTransfer.files[0];if(file)processFile(file,type,which);}
+function fileSelect(e,type,which){var file=e.target.files[0];if(file)processFile(file,type,which);}
+
+function processFile(file,type,which){
+var reader=new FileReader();
+reader.onload=function(e){
+var rows=parseCSV(e.target.result);
+state[type][which==='top'?'top':'line']=rows;
+var prefix=type==='power'?'pwr':'cln';
+var dzId=which==='top'?prefix+'-dz1':prefix+'-dz2';
+document.getElementById(dzId).classList.add('loaded');
+document.getElementById(dzId+'-status').innerHTML='Loaded: <strong>'+rows.length+' rows</strong> from '+file.name;
+document.getElementById(dzId+'-status').style.color='#16A34A';
+matchAndRender(type);
+};reader.readAsText(file);
+}
+
+function matchAndRender(type){
+var topData=state[type].top,lineData=state[type].line;
+var prefix=type==='power'?'pwr':'cln';
+if(topData.length===0){document.getElementById(prefix+'-queue').innerHTML='<div class="queue-empty"><div class="big-icon">--</div><div>Drop the Top Opportunities CSV first</div></div>';return;}
+var associates=[];
+for(var i=0;i<topData.length;i++){
+var row=topData[i];var assocId=row['Associate Id']||'';if(!assocId)continue;
+var pct,units,cogs,mgr;
+if(type==='power'){pct=parseFloat(row['% Tested'])||0;units=parseInt(row['Units Asked to Test'])||0;cogs=parseFloat(row['COGS Not Tested'])||0;mgr=row['Manager Id']||'';}
+else{pct=parseFloat(row['% Cleaned'])||0;units=parseInt(row['Units Asked to Clean'])||0;cogs=parseFloat(row['COGS Not Cleaned'])||0;mgr='';}
+associates.push({id:assocId,manager:mgr,pct:pct,pctDisplay:(pct*100).toFixed(2),units:units,cogs:cogs,lpns:[]});
+}
+associates.sort(function(a,b){return a.pct-b.pct;});
+var totalLpns=0;
+if(lineData.length>0){
+var lpnMap={};
+for(var j=0;j<lineData.length;j++){var lr=lineData[j];var aid=lr['Associate Id']||'';if(!aid)continue;
+if(!lpnMap[aid])lpnMap[aid]=[];
+lpnMap[aid].push({lpn:lr['LPN']||'',gl:lr['GL Name']||'',subcat:lr['Subcategory Desc']||'',cost:lr['Item Fifo Cost']||'',date:lr['Activity End Time']||'',answer:lr['Answer String']||'',asin:lr['Asin']||''});}
+for(var k=0;k<associates.length;k++){if(lpnMap[associates[k].id]){associates[k].lpns=lpnMap[associates[k].id];totalLpns+=associates[k].lpns.length;}}
+}
+state[type].matched=associates;
+document.getElementById(prefix+'-cnt-assoc').textContent=associates.length;
+document.getElementById(prefix+'-cnt-lpn').textContent=totalLpns;
+var html='';
+for(var m=0;m<associates.length;m++){
+var a=associates[m];
+var rankClass=m===0?'rank-1':m===1?'rank-2':m===2?'rank-3':'rank-other';
+var pctClass=a.pct<0.5?'pct-low':a.pct<0.8?'pct-med':'pct-high';
+var pctLabel=type==='power'?'Tested':'Cleaned';
+html+='<div class="assoc-card"><div class="assoc-header" onclick="toggleAssoc(this)"><div class="assoc-info"><div class="assoc-rank '+rankClass+'">'+(m+1)+'</div><div><div class="assoc-login">'+a.id+'</div>';
+if(a.manager)html+='<div class="assoc-mgr">Mgr: '+a.manager+'</div>';
+html+='</div></div><div class="assoc-stats"><div class="stat"><div class="stat-val '+pctClass+'">'+a.pctDisplay+'%</div><div class="stat-label">'+pctLabel+'</div></div>';
+html+='<div class="stat"><div class="stat-val">'+a.units+'</div><div class="stat-label">Units</div></div>';
+html+='<div class="stat"><div class="stat-val">$'+a.cogs.toFixed(2)+'</div><div class="stat-label">COGS</div></div>';
+html+='<div class="stat"><div class="stat-val" style="color:#7C3AED">'+a.lpns.length+'</div><div class="stat-label">LPNs</div></div>';
+html+='<div class="assoc-expand">v</div></div></div>';
+html+='<div class="assoc-body">';
+if(a.lpns.length>0){
+html+='<table class="lpn-table"><thead><tr><th>Select</th><th>LPN</th><th>GL / Category</th><th>Subcategory</th><th>Cost</th><th>Date</th></tr></thead><tbody>';
+for(var n=0;n<a.lpns.length;n++){var lp=a.lpns[n];
+html+='<tr><td><input type="checkbox" class="lpn-check" data-type="'+type+'" data-assoc="'+a.id+'" data-lpn="'+lp.lpn+'" data-gl="'+lp.gl+'" data-subcat="'+lp.subcat+'" data-cost="'+lp.cost+'"></td>';
+html+='<td style="font-family:monospace;font-size:11px;color:#7C3AED">'+lp.lpn+'</td>';
+html+='<td>'+lp.gl+'</td><td style="font-size:11px">'+lp.subcat+'</td>';
+html+='<td>$'+(parseFloat(lp.cost)||0).toFixed(2)+'</td>';
+html+='<td style="font-size:11px">'+lp.date+'</td></tr>';}
+html+='</tbody></table>';
+}else{html+='<div style="padding:12px;color:#9CA3AF;font-size:13px">No LPNs found. Drop the Line Item Drill Down CSV to match LPNs.</div>';}
+html+='<button class="engage-btn" onclick="loadToForm(\''+type+'\','+m+')">Load into Form</button></div></div>';
+}
+document.getElementById(prefix+'-queue').innerHTML=html||'<div class="queue-empty"><div class="big-icon">--</div><div>No associates found in the CSV</div></div>';
+}
+
+function toggleAssoc(header){var body=header.nextElementSibling;var arrow=header.querySelector('.assoc-expand');body.classList.toggle('open');arrow.classList.toggle('open');}
+
+function loadToForm(type,idx){
+var a=state[type].matched[idx];if(!a)return;
+var prefix=type==='power'?'pwr':'cln';
+document.getElementById(prefix+'-login').value=a.id;
+document.getElementById(prefix+'-pct').value=a.pctDisplay;
+if(type==='power'){document.getElementById('pwr-units').value=a.units;document.getElementById('pwr-cogs').value=a.cogs.toFixed(2);}
+var checkedLpns=document.querySelectorAll('.lpn-check[data-type="'+type+'"][data-assoc="'+a.id+'"]:checked');
+var lpnHtml='';
+if(checkedLpns.length>0){
+lpnHtml='<div class="lpn-note-group"><div class="lpn-note-header">Selected LPNs for Review ('+checkedLpns.length+')</div>';
+checkedLpns.forEach(function(cb){lpnHtml+='<div class="lpn-note-item">'+cb.dataset.lpn+' - '+cb.dataset.gl+' / '+cb.dataset.subcat+' ($'+parseFloat(cb.dataset.cost||0).toFixed(2)+')</div>';});
+lpnHtml+='</div>';
+}else if(a.lpns.length>0){lpnHtml='<div class="lpn-note-group"><div class="lpn-note-header">No LPNs selected - check boxes in the queue above, then click Load into Form again</div></div>';}
+document.getElementById(prefix+'-lpn-notes').innerHTML=lpnHtml;
+if(checkedLpns.length>0){
+var reasonHtml='<div style="margin-top:12px"><div class="form-label" style="margin-bottom:8px;font-size:13px;color:#4C1D95;font-weight:700">LPN Review Notes (fill in reason for each):</div>';
+checkedLpns.forEach(function(cb){
+var itemDesc=cb.dataset.gl;if(cb.dataset.subcat)itemDesc+=' - '+cb.dataset.subcat;
+reasonHtml+='<div style="background:#F5F3FF;border:1px solid #E9E5F5;border-radius:6px;padding:10px;margin-bottom:8px">';
+reasonHtml+='<div style="font-size:12px;color:#6D28D9;font-weight:600;margin-bottom:4px">'+cb.dataset.lpn+' ('+itemDesc+')</div>';
+reasonHtml+='<input class="form-input lpn-reason" data-lpn="'+cb.dataset.lpn+'" data-gl="'+cb.dataset.gl+'" data-subcat="'+cb.dataset.subcat+'" placeholder="e.g. They were not able to test it as it needs to be plugged into a vehicle" style="width:100%;font-size:12px">';
+reasonHtml+='</div>';});
+reasonHtml+='</div>';
+document.getElementById(prefix+'-lpn-notes').innerHTML+=reasonHtml;
+}
+document.getElementById(prefix+'-form').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function generateNote(type){
+var prefix=type==='power'?'pwr':'cln';
+var login=document.getElementById(prefix+'-login').value;
+var pct=document.getElementById(prefix+'-pct').value;
+var note='';
+if(type==='power'){
+var units=document.getElementById('pwr-units').value;
+var cogs=document.getElementById('pwr-cogs').value;
+var supplies=document.querySelector('input[name="pwr-supplies"]:checked').value;
+var trained=document.querySelector('input[name="pwr-trained"]:checked').value;
+var barriers=document.querySelector('input[name="pwr-barriers"]:checked').value;
+var barrierDetail=document.getElementById('pwr-barrier-detail').value;
+var missing=document.getElementById('pwr-missing').value;
+note='Engaged with associate. Their power percentage from last week was at '+pct+'%. ';
+note+='They tested about '+units+' items and the cost of $'+parseFloat(cogs||0).toFixed(2)+' of items that weren\'t tested. ';
+note+='We had inspected their station together to see if they were missing any items and they ';
+if(supplies==='yes'){note+='had all their supplies. ';}else{note+='were missing: '+(missing||'[specify missing items]')+'. ';}
+note+='They ';
+if(trained==='yes'){note+='had been properly trained to test the items';}else{note+='needed additional coaching on power testing procedures';}
+if(barriers==='no'){note+=' and currently they don\'t have any barriers.';}
+else{note+='. The barrier they have is that '+(barrierDetail||'[specify barrier]')+'.';}
+}else{
+var supplies=document.querySelector('input[name="cln-supplies"]:checked').value;
+var barriers=document.querySelector('input[name="cln-barriers"]:checked').value;
+var time=document.querySelector('input[name="cln-time"]:checked').value;
+var remind=document.querySelector('input[name="cln-remind"]:checked').value;
+var barrierDetail=document.getElementById('cln-barrier-detail').value;
+var missing=document.getElementById('cln-missing').value;
+note='Engaged with associate. Their cleaning percentage from last week was at '+pct+'%. ';
+if(remind==='yes'){note+='Remind them that if the item is dirty to click on "dirty/stains" and if they\'re able to clean it or not. ';}
+note+='We had reviewed their station together to see if they were missing anything and they ';
+if(supplies==='yes'){note+='had all their cleaning supplies. ';}else{note+='were missing: '+(missing||'[specify missing supplies]')+'. ';}
+note+='They ';
+if(barriers==='no'){note+='didn\'t have any current barriers';}else{note+='had a barrier: '+(barrierDetail||'[specify barrier]');}
+if(time==='yes'){note+=' and said they had enough time to clean items.';}
+else{note+='. They said they don\'t have enough time to clean items.';}
+}
+var reasons=document.querySelectorAll('#'+prefix+'-lpn-notes .lpn-reason');
+var lpnNotes=[];
+reasons.forEach(function(input){if(input.value.trim()){
+var gl=input.dataset.gl||'';var subcat=input.dataset.subcat||'';
+var itemDesc=subcat?gl+' - '+subcat:gl;
+lpnNotes.push(input.dataset.lpn+' - The item is a '+itemDesc.toLowerCase()+'. '+input.value.trim());}});
+if(lpnNotes.length>0){
+var lpnWord=lpnNotes.length===1?'1 LPN':lpnNotes.length+' LPNs';
+note+=' We had review'+(type==='clean'?'ed':'')+' '+lpnWord+' from last week.\n';
+lpnNotes.forEach(function(ln){note+=ln+'\n';});
+}else if(type==='power'&&parseFloat(pct)>=100){}
+else if(type==='clean'){note+=' We weren\'t able to review any LPNs as on the quick site there wasn\'t any LPNs to review.';}
+var finalNote=note.trim();
+document.getElementById(prefix+'-output').style.display='block';
+document.getElementById(prefix+'-output-text').textContent=finalNote;
+document.getElementById(prefix+'-output').scrollIntoView({behavior:'smooth'});
+
+// Save to history
+var history=getHistory();
+history.push({
+id:Date.now(),
+type:type,
+login:login||'unknown',
+pct:pct||'N/A',
+date:new Date().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}),
+timestamp:new Date().toISOString(),
+note:finalNote
+});
+saveHistory(history);
+}
+
+function copyNote(type){
+var prefix=type==='power'?'pwr':'cln';
+var text=document.getElementById(prefix+'-output-text').textContent;
+navigator.clipboard.writeText(text).then(function(){
+var btn=document.querySelector('#'+prefix+'-output .copy-btn');
+btn.textContent='Copied!';btn.classList.add('copied');
+setTimeout(function(){btn.textContent='Copy';btn.classList.remove('copied');},2000);
+});
+}
+
+function clearData(type){
+var prefix=type==='power'?'pwr':'cln';
+state[type]={top:[],line:[],matched:[]};
+var dz1=document.getElementById(prefix+'-dz1'),dz2=document.getElementById(prefix+'-dz2');
+dz1.classList.remove('loaded');dz2.classList.remove('loaded');
+document.getElementById(prefix+'-dz1-status').innerHTML='';
+document.getElementById(prefix+'-dz2-status').innerHTML='';
+dz1.querySelector('input[type=file]').value='';
+dz2.querySelector('input[type=file]').value='';
+document.getElementById(prefix+'-cnt-assoc').textContent='0';
+document.getElementById(prefix+'-cnt-lpn').textContent='0';
+document.getElementById(prefix+'-queue').innerHTML='<div class="queue-empty"><div class="big-icon">--</div><div>Drop CSV files above to populate the engagement queue</div></div>';
+document.getElementById(prefix+'-login').value='';
+document.getElementById(prefix+'-pct').value='';
+if(type==='power'){document.getElementById('pwr-units').value='';document.getElementById('pwr-cogs').value='';document.getElementById('pwr-missing').value='';document.getElementById('pwr-barrier-detail').value='';}
+else{document.getElementById('cln-missing').value='';document.getElementById('cln-barrier-detail').value='';}
+document.getElementById(prefix+'-lpn-notes').innerHTML='';
+document.getElementById(prefix+'-output').style.display='none';
+}
+
+// ===== HISTORY =====
+function renderHistory(){
+var history=getHistory();
+var search=(document.getElementById('history-search').value||'').toLowerCase();
+var filter=document.getElementById('history-filter').value;
+var sort=document.getElementById('history-sort').value;
+
+var filtered=history.filter(function(h){
+if(filter!=='all'&&h.type!==filter)return false;
+if(search){
+var haystack=(h.login+' '+h.note+' '+h.date+' '+h.pct).toLowerCase();
+if(haystack.indexOf(search)===-1)return false;
+}return true;
+});
+
+if(sort==='newest')filtered.sort(function(a,b){return b.id-a.id;});
+else if(sort==='oldest')filtered.sort(function(a,b){return a.id-b.id;});
+else if(sort==='login')filtered.sort(function(a,b){return a.login.localeCompare(b.login);});
+
+// Stats
+var totalPower=history.filter(function(h){return h.type==='power';}).length;
+var totalClean=history.filter(function(h){return h.type==='clean';}).length;
+var thisWeek=history.filter(function(h){
+var d=new Date(h.timestamp);var now=new Date();
+var weekAgo=new Date(now.getTime()-7*24*60*60*1000);
+return d>=weekAgo;
+}).length;
+var thisWeekPower=history.filter(function(h){
+var d=new Date(h.timestamp);var now=new Date();var weekAgo=new Date(now.getTime()-7*24*60*60*1000);
+return d>=weekAgo&&h.type==='power';
+}).length;
+var thisWeekClean=history.filter(function(h){
+var d=new Date(h.timestamp);var now=new Date();var weekAgo=new Date(now.getTime()-7*24*60*60*1000);
+return d>=weekAgo&&h.type==='clean';
+}).length;
+
+document.getElementById('history-stats').innerHTML=
+'<div class="history-stat-card"><div class="history-stat-val">'+history.length+'</div><div class="history-stat-label">Total Engagements</div></div>'+
+'<div class="history-stat-card"><div class="history-stat-val">'+totalPower+'</div><div class="history-stat-label">Power Testing</div></div>'+
+'<div class="history-stat-card"><div class="history-stat-val">'+totalClean+'</div><div class="history-stat-label">Cleaning</div></div>'+
+'<div class="history-stat-card"><div class="history-stat-val">'+thisWeek+'</div><div class="history-stat-label">This Week</div></div>'+
+'<div class="history-stat-card"><div class="history-stat-val">'+thisWeekPower+' / 20</div><div class="history-stat-label">Weekly Power Goal</div></div>'+
+'<div class="history-stat-card"><div class="history-stat-val">'+thisWeekClean+' / 20</div><div class="history-stat-label">Weekly Clean Goal</div></div>';
+
+if(filtered.length===0){
+document.getElementById('history-list').innerHTML='<div class="queue-empty"><div class="big-icon">--</div><div>No engagement history found'+(search?' matching "'+search+'"':'')+'</div></div>';
+return;
+}
+
+var html='';
+for(var i=0;i<filtered.length;i++){
+var h=filtered[i];
+var typeBadge=h.type==='power'?'<span class="history-type-badge power">Power Testing</span>':'<span class="history-type-badge clean">Cleaning</span>';
+html+='<div class="history-card">';
+html+='<div class="history-card-header">'+typeBadge+'<span style="font-size:12px;color:#6B7280">'+h.date+'</span></div>';
+html+='<div class="history-meta"><span><strong>Login:</strong> '+h.login+'</span><span><strong>Percentage:</strong> '+h.pct+'%</span></div>';
+html+='<div class="history-note" id="hn-'+h.id+'" onclick="toggleHistoryNote('+h.id+')">'+escapeHtml(h.note)+'</div>';
+html+='<div class="history-note-toggle" onclick="toggleHistoryNote('+h.id+')">Click to expand/collapse</div>';
+html+='<div class="history-actions">';
+html+='<button class="history-btn copy" onclick="copyHistoryNote('+h.id+',this)">Copy Note</button>';
+html+='<button class="history-btn delete" onclick="deleteHistoryEntry('+h.id+')">Delete</button>';
+html+='</div></div>';
+}
+document.getElementById('history-list').innerHTML=html;
+}
+
+function escapeHtml(text){var d=document.createElement('div');d.textContent=text;return d.innerHTML;}
+
+function toggleHistoryNote(id){document.getElementById('hn-'+id).classList.toggle('expanded');}
+
+function copyHistoryNote(id,btn){
+var history=getHistory();
+var entry=history.find(function(h){return h.id===id;});
+if(!entry)return;
+navigator.clipboard.writeText(entry.note).then(function(){
+btn.textContent='Copied!';btn.style.background='#16A34A';btn.style.color='#fff';btn.style.borderColor='#16A34A';
+setTimeout(function(){btn.textContent='Copy Note';btn.style.background='#F5F3FF';btn.style.color='#7C3AED';btn.style.borderColor='#7C3AED';},2000);
+});
+}
+
+function deleteHistoryEntry(id){
+if(!confirm('Delete this engagement entry?'))return;
+var history=getHistory().filter(function(h){return h.id!==id;});
+saveHistory(history);renderHistory();
+}
+
+function clearHistory(){
+if(!confirm('Delete ALL engagement history? This cannot be undone.'))return;
+saveHistory([]);renderHistory();
+}
+
+function exportHistory(){
+var history=getHistory();
+if(history.length===0){alert('No history to export.');return;}
+var csv='Type,Login,Percentage,Date,Note\n';
+history.forEach(function(h){
+var noteClean='"'+h.note.replace(/"/g,'""')+'"';
+csv+=h.type+','+h.login+','+h.pct+'%,'+h.date+','+noteClean+'\n';
+});
+var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+var link=document.createElement('a');
+link.href=URL.createObjectURL(blob);
+link.download='apollo_engagement_history_'+new Date().toISOString().slice(0,10)+'.csv';
+document.body.appendChild(link);link.click();document.body.removeChild(link);
+URL.revokeObjectURL(link.href);
+}
+
+// ===== FULLSCREEN & EXPORT =====
+(function(){
+document.getElementById('export-html-btn').addEventListener('click',function(){
+try{var hc=document.documentElement.cloneNode(true);
+var a=hc.querySelector('details[style*="FFF3CD"]');if(a)a.remove();
+var html='<!DOCTYPE html>\n'+hc.outerHTML;
+var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+var link=document.createElement('a');link.href=URL.createObjectURL(blob);
+link.download='apollo_engagement_tool_'+new Date().toISOString().slice(0,10)+'.html';
+document.body.appendChild(link);link.click();document.body.removeChild(link);
+URL.revokeObjectURL(link.href);
+var btn=this;btn.innerHTML='Saved!';setTimeout(function(){btn.innerHTML='Save Tool';},2000);
+}catch(err){alert('Export failed: '+err.message);}
+});
+document.getElementById('fs-btn').addEventListener('click',function(){
+if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(function(e){console.error(e)});}
+else{document.exitFullscreen();}
+});
+document.addEventListener('fullscreenchange',function(){
+document.getElementById('fs-btn').textContent=document.fullscreenElement?'Exit':'Fullscreen';
+});
+})();
+
+// Load history on page load
+renderHistory();
+</script>
+</body>
+</html>
